@@ -1,0 +1,8 @@
+{
+  "name": "tablero-seguimiento-medidas",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Tablero de Seguimiento de Medidas leído en vivo desde Google Sheets",
+  "engines": { "node": ">=20" }
+}

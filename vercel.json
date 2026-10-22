@@ -1,0 +1,14 @@
+{
+  "functions": {
+    "api/data.js": { "maxDuration": 60, "memory": 1024 }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+        { "key": "X-Frame-Options", "value": "DENY" }
+      ]
+    }
+  ]
+}
