@@ -268,8 +268,8 @@
     let m = maps[id];
     if (!m) {
       const map = L.map(el, { scrollWheelZoom: false, zoomControl: true, attributionControl: true }).setView([-34.615, -58.445], 11);
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-        attribution: "© OpenStreetMap © CARTO", subdomains: "abcd", maxZoom: 18,
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 18,
       }).addTo(map);
       m = maps[id] = { map, layer: L.layerGroup().addTo(map) };
     }
@@ -614,7 +614,7 @@
         setText(p + "-k1", fmt(reg));
         setText(p + "-k2", fmt(distinct(T, gest, "asm", (i) => fc[i] === DB.today)));
         const ratio = reg ? gest.length / reg : 0;
-        setText(p + "-k3", nf2.format(ratio));
+        setText(p + "-k3", `${new Intl.NumberFormat("es-AR", { maximumFractionDigits: 1 }).format(ratio * 100)} %`);
         gaugeChart(p + "-gauge", ratio);
         setText(p + "-k4", fmt(gest.length));
         const ag = distinct(T, gest, "agente");
@@ -658,6 +658,7 @@
       id: "alertas", title: "ALERTAS", table: "A",
       filters: [],
       layout: (p) => `
+        <div class="error" id="${p}-warn" style="display:none;margin-bottom:16px"></div>
         <div class="grid">
           ${card("c5", "Tipos de medidas por casos", canvas(p + "-tmedida"))}
           ${card("c7", "Cantidad de casos por gestión", canvas(p + "-gestion"))}
@@ -666,6 +667,10 @@
         </div>`,
       render(page, T, rows) {
         const p = page.id;
+        const warn = document.getElementById(p + "-warn");
+        const reason = DB.alertasError || (T.n === 0 ? "La hoja de Alertas llegó vacía." : (DB.missingA.length ? `Columnas no encontradas: ${DB.missingA.join(", ")}` : ""));
+        warn.style.display = reason ? "block" : "none";
+        warn.innerHTML = reason ? `<b>No se pudieron leer las alertas.</b><br>${esc(reason)}` : "";
         // Igual que el Looker: se cuentan registros; en la torta los vacíos suman a "Otros".
         const tm = catCounts(T, rows, "tmedida", null);
         const blanks = rows.length - tm.reduce((s, x) => s + x.value, 0);
@@ -751,8 +756,8 @@
     try {
       const raw = window.__DATA__ || (await load());
       if (raw.naDate !== undefined) NA = raw.naDate;
-      DB = { M: wrap(raw.medidas), A: wrap(raw.alertas), today: raw.today };
-      const missing = [...(raw.missing?.medidas || []), ...(raw.missing?.alertas || [])];
+      DB = { M: wrap(raw.medidas), A: wrap(raw.alertas), today: raw.today, alertasError: raw.alertasError, missingA: raw.missing?.alertas || [] };
+      const missing = raw.missing?.medidas || [];
       const when = new Date(raw.generatedAt);
       $("#updated").textContent = `Datos al ${when.toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })}`
         + (missing.length ? ` · Columnas no encontradas: ${missing.join(", ")}` : "");
