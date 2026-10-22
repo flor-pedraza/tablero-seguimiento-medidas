@@ -104,7 +104,7 @@
     Chart.defaults.color = css("--text-2");
     Chart.defaults.borderColor = css("--grid");
     Chart.defaults.maintainAspectRatio = false;
-    Chart.defaults.animation = { duration: 250 };
+    Chart.defaults.animation.duration = 250; // solo la duración: reemplazar el objeto rompe la curva de animación
     Chart.defaults.plugins.legend.labels.boxWidth = 10;
     Chart.defaults.plugins.legend.labels.boxHeight = 10;
     Chart.defaults.plugins.tooltip.callbacks.label = (ctx) => {
