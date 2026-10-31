@@ -1,41 +1,24 @@
 :root {
+  /* Colores del tablero original (Looker MPF) */
   color-scheme: light;
-  --page: #f4f5f3;
-  --surface: #fcfcfb;
+  --page: #f5f5f3;
+  --surface: #ffffff;
+  --band: #f0efed;          /* franja gris del encabezado, igual al fondo del logo */
   --text: #0b0b0b;
-  --text-2: #52514e;
-  --muted: #898781;
-  --grid: #e1e0d9;
-  --axis: #c3c2b7;
+  --text-2: #4a4a48;
+  --muted: #858581;
+  --grid: #e6e6e3;
+  --axis: #c9c9c4;
   --border: rgba(11, 11, 11, 0.10);
-  --accent: #0f5c66;
-  --accent-soft: #e3eff0;
-  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
-  --s5: #e87ba4; --s6: #008300; --s7: #6250d6; --s8: #e34948;
-  --other: #b9b8b1;
-  --seq-lo: #cde2fb; --seq-hi: #104281;
+  --accent: #006174;        /* teal del logo MPF */
+  --accent-soft: #e0eef0;
+  --good: #388e3c;
+  --s1: #388e3c; --s2: #f59e52; --s3: #e53935; --s4: #f4b400;
+  --s5: #86a92c; --s6: #0e9d58; --s7: #006174; --s8: #8e24aa;
+  --other: #bdbdb8;
+  --seq-lo: #dcedc8; --seq-hi: #1b5e20;
   --radius: 10px;
   --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --page: #0d0d0d; --surface: #1a1a19; --text: #f0efec; --text-2: #c3c2b7;
-    --muted: #898781; --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
-    --accent: #5fb3bd; --accent-soft: #1f3335;
-    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
-    --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
-    --other: #5c5b56; --seq-lo: #1c3550; --seq-hi: #86b6ef;
-  }
-}
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --page: #0d0d0d; --surface: #1a1a19; --text: #f0efec; --text-2: #c3c2b7;
-  --muted: #898781; --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
-  --accent: #5fb3bd; --accent-soft: #1f3335;
-  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
-  --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
-  --other: #5c5b56; --seq-lo: #1c3550; --seq-hi: #86b6ef;
 }
 
 * { box-sizing: border-box; }
@@ -44,9 +27,12 @@ body { background: var(--page); color: var(--text); font: 14px/1.4 var(--font); 
 button { font: inherit; color: inherit; }
 
 .top {
-  display: flex; justify-content: space-between; align-items: center; gap: 16px;
-  padding: 18px 28px; background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 22px;
+  padding: 14px 28px; background: var(--band); border-bottom: 1px solid var(--border);
 }
+.logo { height: 54px; width: auto; display: block; }
+.brand { flex: 1; min-width: 0; }
+.top .ghost { background: var(--surface); }
 .brand h1 { margin: 0; font-size: 20px; font-weight: 650; color: var(--accent); }
 .brand p { margin: 2px 0 0; color: var(--text-2); font-size: 13px; }
 .meta { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 12px; }
@@ -110,7 +96,7 @@ main { padding: 20px 28px 48px; max-width: 1500px; margin: 0 auto; }
 
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px; }
 .kpi {
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px;
+  background: var(--band); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px;
 }
 .kpi .k-lbl { color: var(--text-2); font-size: 12.5px; }
 .kpi .k-val { font-size: 28px; font-weight: 650; margin-top: 4px; letter-spacing: -.01em; }
@@ -144,7 +130,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .tbl td.rk { color: var(--muted); width: 28px; font-variant-numeric: tabular-nums; }
 .tbl td.bar { position: relative; min-width: 110px; }
 .tbl td.bar i {
-  position: absolute; right: 0; top: 3px; bottom: 3px; background: var(--s1); opacity: .22; border-radius: 3px 0 0 3px;
+  position: absolute; right: 0; top: 3px; bottom: 3px; background: var(--good); opacity: .28; border-radius: 3px 0 0 3px;
 }
 .tbl td.bar b { position: relative; font-weight: 600; }
 .tbl-wrap { overflow: auto; max-height: 440px; }
@@ -162,7 +148,10 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .note { color: var(--muted); font-size: 12px; margin-top: 6px; }
 
 @media (max-width: 640px) {
-  .top { padding: 14px 16px; flex-direction: column; align-items: flex-start; }
+  .top { padding: 12px 16px; flex-wrap: wrap; gap: 10px 16px; }
+  .logo { height: 40px; }
+  .brand { flex-basis: 100%; order: 2; }
+  .meta { order: 3; }
   .tabs { padding: 0 8px; }
   main { padding: 14px 16px 40px; }
   .pop { width: 270px; }
