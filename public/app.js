@@ -132,20 +132,41 @@
     formatter: (v) => fmt(v),
   });
 
-  function barChart(id, items, { horizontal = false, color, labels } = {}) {
+  // Escala de color por valor, como el Looker original: mayor = verde → amarillo → naranja → menor = rojo.
+  const GRADIENT = ["#e53935", "#f57c00", "#f4b400", "#a6ad20", "#0e9d58"];
+  function gradColor(v, min, max) {
+    const t = max > min ? (v - min) / (max - min) : 1;
+    const x = t * (GRADIENT.length - 1);
+    const i = Math.min(Math.floor(x), GRADIENT.length - 2);
+    return mix(GRADIENT[i], GRADIENT[i + 1], x - i);
+  }
+  // Corta etiquetas largas para el eje (el texto completo queda en el tooltip).
+  const shortLabel = (l, n = 24) => (Array.isArray(l) ? l : String(l).length > n ? String(l).slice(0, n - 1) + "…" : l);
+  function barChart(id, items, { horizontal = false, labels } = {}) {
     if (!items.length) return emptyChart(id);
-    const col = color || css("--s1");
-    const lbls = labels || items.map((x) => x.label);
+    const full = labels || items.map((x) => x.label);
+    const lbls = full.map((l) => shortLabel(l));
     const showLabels = items.length <= 26;
-    const cat = { ...axisCommon(), grid: { display: false }, ticks: { color: css("--text-2"), autoSkip: !horizontal, maxRotation: 0, font: { size: 11 } } };
+    const vals = items.filter((x) => !x.other).map((x) => x.value);
+    const vmin = Math.min(...vals), vmax = Math.max(...vals);
+    const isMonth = Array.isArray(full[0]);
+    const cat = { ...axisCommon(), grid: { display: false }, ticks: {
+      color: css("--text-2"), font: { size: 11 },
+      // Se muestran TODAS las etiquetas; si no entran derechas, se inclinan.
+      autoSkip: horizontal ? false : isMonth && items.length > 40,
+      maxRotation: horizontal || isMonth ? 0 : 50, minRotation: 0,
+    } };
     const val = { ...axisCommon(), beginAtZero: true, grace: "12%" };
     draw(id, {
       type: "bar",
-      data: { labels: lbls, datasets: [{ data: items.map((x) => x.value), backgroundColor: items.map((x) => (x.other ? css("--other") : col)), borderRadius: 4, borderSkipped: "start", maxBarThickness: 46, categoryPercentage: 0.82, barPercentage: 0.9 }] },
+      data: { labels: lbls, datasets: [{ data: items.map((x) => x.value), backgroundColor: items.map((x) => (x.other ? css("--other") : gradColor(x.value, vmin, vmax))), borderRadius: 4, borderSkipped: "start", maxBarThickness: 46, categoryPercentage: 0.82, barPercentage: 0.9 }] },
       options: {
         indexAxis: horizontal ? "y" : "x",
         scales: horizontal ? { x: val, y: cat } : { x: cat, y: val },
-        plugins: { legend: { display: false }, datalabels: valueLabels(horizontal, showLabels) },
+        plugins: {
+          legend: { display: false }, datalabels: valueLabels(horizontal, showLabels),
+          tooltip: { callbacks: { title: (c) => { const l = full[c[0].dataIndex]; return Array.isArray(l) ? l.join(" ") : l; } } },
+        },
         layout: { padding: { right: horizontal ? 24 : 0, top: 4 } },
       },
     });
@@ -186,7 +207,7 @@
     const r = Math.max(0, Math.min(1, ratio || 0));
     draw(id, {
       type: "doughnut",
-      data: { datasets: [{ data: [r, 1 - r], backgroundColor: [css("--s3"), css("--grid")], borderWidth: 0 }] },
+      data: { datasets: [{ data: [r, 1 - r], backgroundColor: [css("--good"), css("--grid")], borderWidth: 0 }] },
       options: { rotation: -90, circumference: 180, cutout: "72%", plugins: { legend: { display: false }, tooltip: { enabled: false } } },
     });
   }
@@ -208,7 +229,10 @@
     const keys = [...m.keys()];
     const peak = Math.max(...m.values());
     // Arranca en el primer mes con volumen real (descarta fechas sueltas mal cargadas al principio).
-    const lo = Math.min(...keys.filter((k) => m.get(k) >= peak * 0.02)), hi = Math.max(...keys);
+    const lo = Math.min(...keys.filter((k) => m.get(k) >= peak * 0.02));
+    // Hasta diciembre del año en curso: descarta fechas futuras mal cargadas (p. ej. 2029).
+    const yearEnd = dayDate(DB.today).getUTCFullYear() * 12 + 11;
+    const hi = Math.min(Math.max(...keys), yearEnd);
     const out = [];
     for (let k = lo; k <= hi; k++) out.push({ key: k, label: monthLabel(k), value: m.get(k) || 0 });
     return out;
