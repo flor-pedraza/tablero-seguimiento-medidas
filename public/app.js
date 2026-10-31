@@ -79,6 +79,17 @@
     const m = groupBy(T, rows, byCat(T, key), idKey);
     return [...m].map(([code, value]) => ({ label: T.label(key, code), value })).sort((a, b) => b.value - a.value);
   }
+  // VG/VD en orden fijo (sin datos de Categorias → "Sin dato", solo si se pide).
+  const VGVD_ORDER = ["VG y VD", "Solo VG", "Solo VD", "Sin VG/VD"];
+  function vgvdCounts(T, rows, idKey, withBlank) {
+    const list = catCounts(T, rows, "vgvd", idKey);
+    const out = VGVD_ORDER.map((l) => list.find((x) => x.label === l)).filter(Boolean);
+    if (withBlank) {
+      const blanks = rows.length - out.reduce((s, x) => s + x.value, 0);
+      if (blanks > 0) out.push({ label: "Sin dato", value: blanks, other: true });
+    }
+    return out;
+  }
   function topN(list, n, otherLabel = "Otros") {
     if (list.length <= n) return list;
     const head = list.slice(0, n);
@@ -498,6 +509,7 @@
     {
       id: "medidas", title: "MEDIDAS", table: "M",
       filters: [
+        { key: "vgvd", label: "VG/VD" },
         { key: "inicio", label: "Inicio de medida", type: "date" },
         { key: "medida", label: "Medida" },
         { key: "tipo", label: "Tipo de Medida de Protección" },
@@ -512,8 +524,9 @@
         <div class="kpis">${kpi(p + "-k1", "Medidas registradas")}${kpi(p + "-k2", "Medidas MPF")}</div>
         <div class="grid">
           ${card("c12", "Medidas registradas por mes (fecha de carga)", canvas(p + "-mes"))}
-          ${card("c5", "Tipo de Medida de Protección", canvas(p + "-tipo"))}
-          ${card("c7", "Medidas registradas por Estado", canvas(p + "-estado"))}
+          ${card("c4", "Tipo de Medida de Protección", canvas(p + "-tipo"))}
+          ${card("c4", "Medidas registradas por VG/VD", canvas(p + "-vgvd"))}
+          ${card("c4", "Medidas registradas por Estado", canvas(p + "-estado"))}
           ${card("c6", "Fiscal ordenante por cantidad de medidas registradas", `<div id="${p}-t-fiscal"></div>`)}
           ${card("c6", "Total de medidas por Tipo de Medida de Protección", `<div id="${p}-t-tipo"></div>`)}
           ${card("c7", "Medidas registradas por Comuna", `<div class="map" id="${p}-map"></div>`)}
@@ -527,6 +540,7 @@
         setText(p + "-k2", fmt(distinct(T, rows, "asm", (i) => org[i] === interno)));
         barChart(p + "-mes", monthlySeries(T, rows, "fc", "asm"));
         donutChart(p + "-tipo", catCounts(T, rows, "tipo", "asm"), "M.tipo");
+        donutChart(p + "-vgvd", vgvdCounts(T, rows, "asm"), "vgvd");
         barChart(p + "-estado", catCounts(T, rows, "estado", "asm"));
         renderTable(p + "-t-fiscal", [{ key: "label", title: "Fiscal / Auxiliar ordenante" }, { key: "value", title: "Medidas registradas", value: true }], catCounts(T, rows, "fiscal", "asm"));
         const tc = T.c("tipo"), mc = T.c("medida");
@@ -541,6 +555,7 @@
     {
       id: "personas", title: "PERSONAS", table: "M",
       filters: [
+        { key: "vgvd", label: "VG/VD" },
         { key: "comuna", label: "Comuna" },
         { key: "dest", label: "Nombre destinatario" },
         { key: "notif", label: "¿Se notificó?" },
@@ -553,7 +568,8 @@
       layout: (p) => `
         <div class="kpis">${kpi(p + "-k1", "Personas únicas")}${kpi(p + "-k2", "Total casos únicos")}${kpi(p + "-k3", "Total personas")}</div>
         <div class="grid">
-          ${card("c12", "Total personas por carácter del legajo", canvas(p + "-caracter", "short"))}
+          ${card("c8", "Total personas por carácter del legajo", canvas(p + "-caracter"))}
+          ${card("c4", "Personas únicas por VG/VD", canvas(p + "-vgvd"))}
           ${card("c12", "Seguimiento del destinatario de la medida según denunciado e inicio de medida", `<div id="${p}-t-seg"></div>`)}
           ${card("c5", "Total de personas por género", canvas(p + "-genero"))}
           ${card("c7", "Total personas por nivel de estudio alcanzado", canvas(p + "-estudio"))}
@@ -566,6 +582,7 @@
         setText(p + "-k2", fmt(distinct(T, rows, "legajo")));
         setText(p + "-k3", fmt(distinct(T, rows, "dest")));
         barChart(p + "-caracter", catCounts(T, rows, "caracter", "dest"));
+        donutChart(p + "-vgvd", vgvdCounts(T, rows, "doc"), "vgvd");
         const dc = T.c("dest"), nc = T.c("denun"), mc = T.c("medida"), ic = T.c("inicio");
         const seg = groupBy(T, rows, (i) => (dc[i] >= 0 ? `${dc[i]}|${nc[i]}|${mc[i]}|${ic[i]}` : null), "legajo");
         renderTable(p + "-t-seg", [
@@ -583,6 +600,7 @@
     {
       id: "casos", title: "CASOS", table: "M",
       filters: [
+        { key: "vgvd", label: "VG/VD" },
         { key: "fc", label: "Período (fecha de carga)", type: "date" },
         { key: "unidad", label: "Unidad Fiscal" },
         { key: "depResp", label: "Dependencia Responsable" },
@@ -595,7 +613,8 @@
         <div class="grid">
           ${card("c6", "Total casos únicos por Unidad Fiscal", canvas(p + "-unidad"))}
           ${card("c6", "Total de casos por Fiscalía ordenante", `<div id="${p}-t-fiscalia"></div>`)}
-          ${card("c12", "Top 5 Fiscalías Ordenantes por total de casos únicos", canvas(p + "-top5"))}
+          ${card("c8", "Top 5 Fiscalías Ordenantes por total de casos únicos", canvas(p + "-top5"))}
+          ${card("c4", "Casos únicos por VG/VD", canvas(p + "-vgvd"))}
         </div>`,
       render(page, T, rows) {
         const p = page.id;
@@ -605,6 +624,7 @@
         const fis = catCounts(T, rows, "fiscalia", "legajo");
         renderTable(p + "-t-fiscalia", [{ key: "label", title: "Fiscalía Ordenante" }, { key: "value", title: "Total casos únicos", value: true }], fis, { pageSize: 10 });
         barChart(p + "-top5", fis.slice(0, 5));
+        donutChart(p + "-vgvd", vgvdCounts(T, rows, "legajo"), "vgvd");
       },
     },
     {
@@ -680,14 +700,15 @@
     },
     {
       id: "alertas", title: "ALERTAS", table: "A",
-      filters: [],
+      filters: [{ key: "vgvd", label: "VG/VD" }],
       layout: (p) => `
         <div class="error" id="${p}-warn" style="display:none;margin-bottom:16px"></div>
         <div class="grid">
-          ${card("c5", "Tipos de medidas por casos", canvas(p + "-tmedida"))}
-          ${card("c7", "Cantidad de casos por gestión", canvas(p + "-gestion"))}
-          ${card("c5", "Distribución de casos por tipo de alerta", canvas(p + "-talerta"))}
-          ${card("c7", "Casos por Estado S/M", canvas(p + "-estado"))}
+          ${card("c4", "Tipos de medidas por casos", canvas(p + "-tmedida"))}
+          ${card("c4", "Alertas por VG/VD", canvas(p + "-vgvd"))}
+          ${card("c4", "Distribución de casos por tipo de alerta", canvas(p + "-talerta"))}
+          ${card("c6", "Cantidad de casos por gestión", canvas(p + "-gestion"))}
+          ${card("c6", "Casos por Estado S/M", canvas(p + "-estado"))}
         </div>`,
       render(page, T, rows) {
         const p = page.id;
@@ -706,6 +727,7 @@
         donutChart(p + "-tmedida", pie, "A.tmedida");
         barChart(p + "-gestion", catCounts(T, rows, "gestion", null));
         barChart(p + "-talerta", catCounts(T, rows, "talerta", null));
+        donutChart(p + "-vgvd", vgvdCounts(T, rows, null, true), "vgvd");
         barChart(p + "-estado", catCounts(T, rows, "estadoSM", null), { horizontal: true });
       },
     },
@@ -718,6 +740,7 @@
     const rm = all(M), ra = all(A);
     colorRank["M.tipo"] = catCounts(M, rm, "tipo", "asm").map((x) => x.label);
     colorRank["M.genero"] = ["FEMENINO", "MASCULINO", "Otros"];
+    colorRank["vgvd"] = VGVD_ORDER;
     colorRank["A.tmedida"] = catCounts(A, ra, "tmedida", null).map((x) => x.label);
     const tot = new Map();
     for (const key of ["g1", "g2", "g3"]) for (const x of catCounts(M, rm, key, null)) tot.set(x.label, (tot.get(x.label) || 0) + x.value);
